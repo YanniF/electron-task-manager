@@ -1,19 +1,22 @@
 import osUtils from 'os-utils'
 import fs from 'fs'
 import os from 'os'
+import {BrowserWindow} from "electron";
 
 // how often are we going to check the resources
 const POLLING_INTERVAL = 500;
 
-export const pollResources = () => {
+export const pollResources = (mainWindow: BrowserWindow) => {
   setInterval(async () => {
     const cpuUsage = await getCpuUsage()
     const ramUsage = getRamUsage()
     const storageInfo = getStorageInfo()
 
-    console.log(`cpuUsage: ${cpuUsage}`)
-    console.log(`ramUsage: ${ramUsage}`)
-    console.log('storageInfo:', storageInfo)
+    mainWindow.webContents.send('stats', {
+      cpuUsage,
+      ramUsage,
+      storageInfo,
+    })
   }, POLLING_INTERVAL)
 }
 
