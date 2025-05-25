@@ -2,6 +2,7 @@ import osUtils from 'os-utils'
 import fs from 'fs'
 import os from 'os'
 import {BrowserWindow} from "electron";
+import {ipcWebContentsSend} from "./util.js";
 
 // how often are we going to check the resources
 const POLLING_INTERVAL = 500;
@@ -12,10 +13,10 @@ export const pollResources = (mainWindow: BrowserWindow) => {
     const ramUsage = getRamUsage()
     const storageInfo = getStorageInfo()
 
-    mainWindow.webContents.send('stats', {
+    ipcWebContentsSend('stats', mainWindow.webContents, {
       cpuUsage,
       ramUsage,
-      storageInfo,
+      storageUsage: storageInfo.usage,
     })
   }, POLLING_INTERVAL)
 }
@@ -32,17 +33,17 @@ export const getStaticData = () => {
   }
 }
 
-const getCpuUsage = () => {
+const getCpuUsage = (): Promise<number> => {
   return new Promise((resolve) => {
     osUtils.cpuUsage(resolve)
   })
 }
 
-const getRamUsage = () => {
+const getRamUsage = (): number => {
   return 1 - osUtils.freememPercentage()
 }
 
-const getStorageInfo = () => {
+const getStorageInfo = (): { total: number, usage: number } => {
   const stats = fs.statfsSync(process.platform === 'win32' ? 'C://' : '/')
   const total = stats.bsize * stats.blocks
   const free = stats.bsize * stats.bfree
